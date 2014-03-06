@@ -1,0 +1,21 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+void verificador(){
+
+};
+
+int main (int argc, char* argv[]){
+  int grid[9][9];
+  printf("Escolha uma opção:\nv - Verificar grid pronta");
+  char input;
+  scanf("%c",&input);
+  switch(input){
+  case 'v':
+    
+    break;
+  }
+
+  return 0;
+}
