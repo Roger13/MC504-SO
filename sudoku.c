@@ -2,100 +2,151 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
-#define N_THR 27
+#define LINE 0
+#define COLLUMN 1
+#define SECTOR 2
+#define true 1
+#define false 0
 
 typedef struct{
-  void* g;
+  int** g;
   int id;
   int type;
-} Data;
+} VerifData;
+
+typedef struct{
+  int success;
+  int id;
+  int type;
+} RetData;
 
 void* thread_verificador(void*v){
-  Data* data = (Data*) v;
-  int** grid = (int**)(*data).g;
-  int id = (*data).id;
-  int type = (*data).type;
-  free(data);
+  VerifData data = *((VerifData*) v);
+  int** grid = data.g;
+  int id = data.id;
+  int type = data.type;
+  free((VerifData*)v);
   int check[9];
-  void* r = (void*)1;
+  RetData ret;
+  ret.success = true;
+  ret.id = id;
+  ret.type = type;
   int k = 0, i;
   // Inicializa vetor de verificacao
   for (i = 0; i < 9; i++){
-    check[i]=0;
+    check[i]=false;
   }
   // Para cada valor encontrado na linha,
   // marque a posição correspondente no vetor
+
   switch (type){
-  case 0:
+  case LINE:
     for (i = 0; i < 9; i++){
       k = grid[id][i];
-      check[k]=1;
+      check[k-1]=true;
     }
     break;
-  case 1:
+  case COLLUMN:
     for (i = 0; i < 9; i++){
       k = grid[i][id];
-      check[k]=1;
+      check[k-1]=true;
     }
     break;
-  case 2:
+  case SECTOR:
     for (i = 0; i < 9; i++){
       k = grid[3*(id/3)+(i/3)][3*(id%3)+(i%3)];
-      check[k]=1;
+      check[k-1]=true;
     }
     break;
   }
-  // Percorre o vetor de verificação. Se algum numero
-  // estiver faltando, r = 0.
+
+  // percorre o vetor de verificação. Se algum numero
+  // estiver faltando, ret.success = false.
   for (i = 0; i < 9; i++){
-    if (check[i]==0){
-      r = (void*)0;
+    if (check[i]==false){
+      ret.success = false;
       break;
     }
   }
+  RetData* r = (RetData*)malloc(sizeof(RetData));
+  *r = ret;
   return (void*) r;
 }
 
-void verificador(){
+int verificador(){
   printf("Insira sudoku completo para verificacao.\n");
-  int grid[9][9];
-  int x = 0, i, j; 
+  int x = 0, i, j, erro = 0; 
+  int **grid = (int**)malloc(sizeof(int*)*9);
+  for (i = 0; i<9; i++) grid[i]=(int*)malloc(sizeof(int)*9);
   for (i = 0; i<9; i++) for (j = 0; j<9 ; j++){
       scanf("%d",&x);
+      if (x<1 || i>9){
+	erro = 2;
+	break;
+      }
       grid[i][j] = (int)x;
   }
-  pthread_t thr[N_THR];
-  Data* data;
+  if (erro == 2){
+    printf("Erro no input.\n");
+    return 2;
+  }
+
+  pthread_t thr[27];
+  VerifData* data;
   // Verificador de linhas
   for (i = 0; i<9; i++){
-    data = malloc(sizeof(Data));
+    data = malloc(sizeof(VerifData));
     (*data).g = (void*)grid;
     (*data).id = i;
-    (*data).type = 0;
+    (*data).type = LINE;
     pthread_create(&thr[i], NULL, thread_verificador, (void*)data);
   }
-      for (i = 0; i<9; i++){
-    data = malloc(sizeof(Data));
-    (*data).g = (void*)grid;
+  // Verificador de colunas
+  for (i = 0; i<9; i++){
+    data = malloc(sizeof(VerifData));
+    (*data).g = (int**)grid;
     (*data).id = i;
-    (*data).type = 1;
+    (*data).type = COLLUMN;
     pthread_create(&thr[i+9], NULL, thread_verificador, (void*)data);
   }
+  // Verificador de setores
   for (i = 0; i<9; i++){
-    data = malloc(sizeof(Data));
+    data = malloc(sizeof(VerifData));
     (*data).g = (void*)grid;
     (*data).id = i;
-    (*data).type = 2;
+    (*data).type = SECTOR;
     pthread_create(&thr[i+18], NULL, thread_verificador, (void*)data);
   }
-  int r = 1;
+  RetData ret;
+  RetData *p_ret;
+  erro = 0;
   for (i = 0; i<27; i++){
-    //  if (pthread_join(&thr[i])==(void*)0)r = 0;
+    pthread_join(thr[i], (void**)&p_ret);
+    ret = *p_ret;
+    free(p_ret);
+    if (ret.success == 0){
+      erro = 1;
+      printf("Erro encontrado n");
+      switch (ret.type){
+      case LINE:
+	printf("a linha ");
+	break;
+      case COLLUMN:
+	printf("a coluna ");
+	break;
+      case SECTOR:
+	printf("o setor ");
+	break;
+      }
+      printf("%d\n", ret.id + 1);
+    }
   }
+  if (erro == 0) printf ("Nenhum erro encontrado na verificacao\n");
+    return erro;
 };
 
 int main (int argc, char* argv[]){
-  printf("Escolha uma opção:\nv - Verificar grid pronta");
+  printf("Escolha uma opção:\n\nv - Verificar grid pronta\n");
   char input;
   scanf("%c",&input);
   switch(input){
