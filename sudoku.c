@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -80,7 +80,7 @@ int verificador(){
   for (i = 0; i<9; i++) grid[i]=(int*)malloc(sizeof(int)*9);
   for (i = 0; i<9; i++) for (j = 0; j<9 ; j++){
       scanf("%d",&x);
-      if (x<1 || i>9){
+      if (x<1 || x>9){	
 	erro = 2;
 	break;
       }
