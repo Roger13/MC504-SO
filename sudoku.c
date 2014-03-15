@@ -8,6 +8,8 @@
 #define true 1
 #define false 0
 
+// this code is good code
+
 typedef struct{
   int** g;
   int id;
