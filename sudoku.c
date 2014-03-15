@@ -1,4 +1,5 @@
-﻿#include <stdio.h>
+﻿
+#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -77,20 +78,21 @@ void* thread_verificador(void*v){
 
 int verificador(){
   printf("Insira sudoku completo para verificacao.\n");
-  int x = 0, i, j, erro = 0; 
+  int x = 0, i, j, erro = 0;
   int **grid = (int**)malloc(sizeof(int*)*9);
-  for (i = 0; i<9; i++) grid[i]=(int*)malloc(sizeof(int)*9);
-  for (i = 0; i<9; i++) for (j = 0; j<9 ; j++){
-      scanf("%d",&x);
-      if (x<1 || x>9){	
-	erro = 2;
-	break;
-      }
-      grid[i][j] = (int)x;
+  for (i = 0; i<9; i++) {
+    grid[i]=(int*)malloc(sizeof(int)*9);
   }
-  if (erro == 2){
-    printf("Erro no input.\n");
-    return 2;
+
+  for (i = 0; i<9; i++) {
+      for (j = 0; j<9 ; j++){
+          scanf(" %d",&x);
+          if (x<1 || x>9){
+            printf("Erro no input.\n");
+            return 2;
+          }
+          grid[i][j] = (int)x;
+      }
   }
 
   pthread_t thr[27];
