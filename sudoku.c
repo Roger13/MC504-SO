@@ -251,19 +251,8 @@ int verificador(){
   return missing.error;
 }
 
-int dica(){
-  printf("Insira sudoku incompleto para geração de dicas.\n");
-  int x = 0, i, j, erro = 0;
-  int** grid = malloc_grid();
-  PNode* pnodeStack = NULL;
-  HintData* data;
-  i = scan_sudoku(grid);
-  if (i){
-    printf("Erro no input.\n");
-    return 2;
-  }
-  SudokuData missingData = sudokuChecker(grid);
-
+int hint_generator(int** grid, SudokuData missingData){
+  int i,j;
   for (i = 0; i<9; i++) {
     for (j = 0; j < 9; j++){
       if (grid[i][j] == 10){
@@ -278,12 +267,40 @@ int dica(){
     }
   }
   PNode* temp;
+  
   while (pnodeStack){
     temp = popPNode(&pnodeStack);
     pthread_join(temp->data, NULL);
     free(temp);
   }
+  // Retorno: 0 se sem problemas
+  //          1 se alguma celula ficou sem possibilidades
+
 }
+
+//int** grid = malloc_grid();
+//if (scan_sudoku(grid)) // erro 2;
+//if (hint_generator(grid,sudoku_checker(grid));
+
+int dica(){
+  printf("Insira sudoku incompleto para geração de dicas.\n");
+  int x = 0, i, j, erro = 0;
+  int** grid = malloc_grid();
+  PNode* pnodeStack = NULL;
+  HintData* data;
+  if (scan_sudoku(grid)){
+    printf("Erro no input.\n");
+    return 2;
+  }
+  if(hint_generator(grid, sudokuChecker(grid))){
+    printf("Erro na verificação.\n");
+    return 1;
+  }
+ 
+  // Printar resultado das dicas;
+  return 0;
+}
+
 
 int main (int argc, char* argv[]){
   printf("Escolha uma opção:\n\nv - Verificar grid pronta\n");
