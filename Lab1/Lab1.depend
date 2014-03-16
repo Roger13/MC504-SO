@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1394907290 source:/home/roger/Desktop/git/MC504-SO/sudoku.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<unistd.h>
+
