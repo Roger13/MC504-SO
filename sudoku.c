@@ -115,7 +115,6 @@ int toBinRep(int digit){
 }
 
 int containsData(int data, int digit){
-  int b = toBinRep(digit);
   return data & toBinRep(digit);
 }
 
@@ -309,34 +308,34 @@ int resolvedor (){
         printf("Erro no input.\n");
         return 2;
     }
-    // Obter a matriz com o vetor de dicas nas posicoes X
-    // Chamar funcao recursiva passado a grid como parametro
-    // Imprimir matriz preenchida
+    // OBTER MATRIZ COM DICAS
+
+    // Chama funcao recursiva preenchedora
+    if (backTracker(grid) == 0){
+        printf("Sudoku insolúvel!\n");
+    }
+
+    // IMPRIMIR MATRIZ PREENCHIDA
 }
 
-//====PSEUDO CODIGO: int backTracker(int** grid) ====
-//Percorre grid em busca de um vetor de dicas
-//Enquanto houver elemento no vetor dica
-//Atribuir o valor do "vetor" na grid
-//Chamar-se recursivamento
-// -Se retornar 1: return 1
-// -Se retornar 0: atribuir o próximo valor do "vetor" e chamar-se
-//Se sair do loop, return 0;
-//Se nao encontrar vetor dicas, return 1;
-
 int backTracker(int** grid){
-    //Percorre grid em busca de um vetor de dicas
-    int i,j,k;
-    for(i = 0; i < 9; i++){
-        for(j = 0; j < 9; j++){
-            if(grid[i][j] < 0){
-                //for(k = 0; k < )
+    int i,j;
+    for(i = 0; i < 81; i++){ //Percorre grid em busca de um vetor de dicas
+        if(grid[i/9][i%9] < 0){ //Caso o elemento tenha um "vetor" de dicas
+            for(j = 1; j <= 9; j++){  //Procura os elementos do "vetor"
+                if(containsData(-grid[i/9][i%9],j)){
+                    grid[i/9][i%9] = j; //Atribui o primeiro val do "vetor"
+                    //CHECAR SE VIOLA LINHA, COL OU SETOR, continue;
 
-                if(backTracker(grid) == )
+                    if(backTracker(grid) == 1){ //Se recursão suceder
+                        return 1;
+                    }
+                }
             }
-            else if(grid[i][j] == 0){
-                printf("Encontrado valor invalido");
-            }
+            return 0; //Caso "vetor" de dicas tenha esgotado sem sucesso
+        }
+        else if(grid[i/9][i%9] == 0){
+            printf("Encontrado valor invalido");
         }
     }
 }
