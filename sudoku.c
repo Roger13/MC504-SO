@@ -115,7 +115,6 @@ int toBinRep(int digit){
 }
 
 int containsData(int data, int digit){
-  int b = toBinRep(digit);
   return data & toBinRep(digit);
 }
 
@@ -124,15 +123,16 @@ void print_sudoku (int** grid){
   for (i=0;i<9;i++){
     for (j=0;j<9;j++){
       if (grid[i][j] > 0){
-	printf("%d",grid[i][j]);
+	printf(" %d      ",grid[i][j]);
       }
       else{
 	l = 0;
-	for (k = 1; k <= 9; k++) if (containsData(grid[i][j],k))l++;
+	for (k = 1; k <= 9; k++) if (containsData(-grid[i][j],k))l++;
 	// Todo: centering
 	printf("(");
-	for (k = 1; k <= 9; k++) if (containsData(grid[i][j],k)) printf("%d",k);
+	for (k = 1; k <= 9; k++) if (containsData(-grid[i][j],k)) printf("%d",k);
 	printf(")");
+	for (k = 0; k < 6-l; k++) printf(" ");
       }
     }
     printf("\n");
@@ -181,11 +181,16 @@ void* thread_verificador(void*v){
 
   // percorre o vetor de verificação. Se algum numero
   // estiver faltando, grave-o no int Missing.
+  if (type==LINE && id == 7){
+    2;
+  }
+
   for (i = 0; i < 9; i++){
     if (check[i]==false){
       ret.missing += toBinRep(i+1);
     }
   }
+
   RetData* r = (RetData*)malloc(sizeof(RetData));
   *r = ret;
   return (void*) r;
@@ -198,13 +203,13 @@ void* thread_dica(void*v){
     x = param.x,
     y = param.y;
   int
-    a = param.data.data[LINE][x],
-    b = param.data.data[COLLUMN][y],
-    c = param.data.data[SECTOR][(y/3)*3 + x/3];
+    a = param.data.data[LINE][y],
+    b = param.data.data[COLLUMN][x],
+    c = param.data.data[SECTOR][x/3 + 3*(y/3)];
   int ret = a & b & c;
-  if (ret == 0) return NULL;
+  //if (ret == 0) return NULL;
   param.g[y][x] = -ret;
-  return (void*)&(param.g[y][x]);
+  return NULL;// (void*)&(param.g[y][x]);
 }
 
 SudokuData sudokuChecker (int** grid){
@@ -241,9 +246,10 @@ SudokuData sudokuChecker (int** grid){
   for (i = 0; i<27;i++){
     pthread_join(thr[i],(void**)&p_ret);
     if (p_ret->missing != 0) ret.error = 1;
-    (ret.data)[p_ret->type][p_ret->id]=p_ret->missing;
+    (ret.data)[p_ret->type][p_ret->id]= p_ret->missing;
     free(p_ret);
   }
+  printf("Retorno do sudokuChecker:\n");
   return ret;
 }
 
@@ -276,7 +282,7 @@ int verificador(){
 	    printf("o setor ");
 	    break;
 	  }
-	  printf("%d: faltam o(s) numero(s)", j + 1);
+	  printf("%d: falta(m) o(s) numero(s)", j + 1);
 	  for (k = 1; k<=9; k++) if (containsData(missing.data[i][j],k)) printf(" %d", k);
 	  printf(".\n");
 	}
@@ -288,7 +294,7 @@ int verificador(){
 }
 
 int hint_generator(int** grid, SudokuData missingData){
-  int i,j, error;
+  int i,j, error=0;
   PNode* pnodeStack = NULL;
   HintData* data;
   for (i = 0; i<9; i++) {
@@ -306,12 +312,13 @@ int hint_generator(int** grid, SudokuData missingData){
   }
   PNode* temp;
   void* ret;
+  error = 0;
   
   while (pnodeStack){
     temp = popPNode(&pnodeStack);
     pthread_join(temp->data, &ret);
     free(temp);
-    if (ret == NULL) error = 1;
+    //if (ret == NULL) error = 1;
   }
 
   return error;
