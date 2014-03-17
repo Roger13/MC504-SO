@@ -318,16 +318,100 @@ int resolvedor (){
     // IMPRIMIR MATRIZ PREENCHIDA
 }
 
+void* thread_check(void*v){
+  VerifData data = *((VerifData*) v);
+  int** grid = data.g;
+  int id = data.id;
+  int type = data.type;
+  int check[9];
+
+  int k = 0, i;
+  // Inicializa vetor de verificacao
+  for (i = 0; i < 9; i++){
+    check[i]=0;
+  }
+  // Para cada valor encontrado na linha,
+  // marque a posição correspondente no vetor
+
+  switch (type){
+  case LINE:
+    for (i = 0; i < 9; i++){
+      k = grid[id][i];
+      check[k-1]++;
+    }
+    break;
+  case COLLUMN:
+    for (i = 0; i < 9; i++){
+      k = grid[i][id];
+      check[k-1]++;
+    }
+    break;
+  case SECTOR:
+    for (i = 0; i < 9; i++){
+      k = grid[3*(id/3)+(i/3)][3*(id%3)+(i%3)];
+      check[k-1]++;
+    }
+    break;
+  }
+
+  // percorre o vetor de verificação. Se algum numero
+  // estiver repitido mais de uma vez retorna 0
+  int ret = 1;
+
+  for (i = 0; i < 9; i++){
+    if (check[i]>1){
+      ret = 0;
+    }
+  }
+  int* r = (int*)malloc(sizeof(int));
+  *r = ret;
+  return (void*) r;
+}
+
 int backTracker(int** grid){
     int i,j;
+    pthread_t thr[3];
+    data = malloc(sizeof(VerifData)*3);
+    // Inicia o vetor de dados
+    for(i = 0; i < 3; i++){
+        data[i].g = (void*)grid;
+        data[i].id = i;
+        switch(i){
+        case'0': data[i].type = LINE;
+            break;
+        case'1': data[i].type = COLLUMN;
+            break;
+        case'2': data[i].type = SECTOR;
+            break;
+        }
+    }
+    verifDataPointer = data[0];
+
     for(i = 0; i < 81; i++){ //Percorre grid em busca de um vetor de dicas
         if(grid[i/9][i%9] < 0){ //Caso o elemento tenha um "vetor" de dicas
             for(j = 1; j <= 9; j++){  //Procura os elementos do "vetor"
                 if(containsData(-grid[i/9][i%9],j)){
                     grid[i/9][i%9] = j; //Atribui o primeiro val do "vetor"
-                    //CHECAR SE VIOLA LINHA, COL OU SETOR, continue;
+                    //Checa se viola linha, col ou setor
+                    pthread_create(&thr[0], NULL, thread_check, (void*)verifDataPointer);
+                    verifDataPointer = data[1];
+                    pthread_create(&thr[1], NULL, thread_check, (void*)verifDataPointer);
+                    verifDataPointer = data[2];
+                    pthread_create(&thr[2], NULL, thread_check, (void*)verifDataPointer);
+                    free(data);
 
-                    if(backTracker(grid) == 1){ //Se recursão suceder
+                    int *p_ret;
+                    int total = 0;
+
+                    int k;
+                    for(k = 0; k < 3; k++){
+                        pthread_join(thr[k],(void**)&p_ret);
+                        total += *p_ret;
+                    }
+                    if(total < 3){  //Caso uma das threads acuse erro
+                        continue;
+                    }
+                    else if(backTracker(grid) == 1){ //Se recursão suceder
                         return 1;
                     }
                 }
