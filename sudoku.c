@@ -197,7 +197,7 @@ void* thread_verificador(void*v){
 void* thread_dica(void*v){
   HintData param = *((HintData*)v);
   free(v);
-  int 
+  int
     x = param.x,
     y = param.y;
   int
@@ -310,7 +310,7 @@ int hint_generator(int** grid, SudokuData missingData){
   PNode* temp;
   void* ret;
   error = 0;
-  
+
   while (pnodeStack){
     temp = popPNode(&pnodeStack);
     pthread_join(temp->data, &ret);
@@ -354,13 +354,7 @@ int resolvedor (){
     printf("Erro no input.\n");
     return 2;
   }
-  if(hint_generator(grid, sudokuChecker(grid))){
-    printf("Erro na verificação.\n");
-    return 1;
-  }
-
   // Chama funcao recursiva preenchedora
-
   if (backTracker(grid) == 0){
     printf("Sudoku insolúvel!\n");
   }
@@ -375,8 +369,6 @@ void* thread_check(void*v){
   int type = data.type;
   int check[9];
 
-  printf("Thread %d",id);
-  
   int k = 0, i;
   // Inicializa vetor de verificacao
   for (i = 0; i < 9; i++){
@@ -409,7 +401,6 @@ void* thread_check(void*v){
   // percorre o vetor de verificação. Se algum numero
   // estiver repitido mais de uma vez retorna 0
   int ret = 1;
-
   for (i = 0; i < 9; i++){
     if (check[i]>1){
       ret = 0;
@@ -421,7 +412,7 @@ void* thread_check(void*v){
 }
 
 int backTracker(int** grid){
-  int i,j;
+  int i,j,k;
   pthread_t thr[3];
   VerifData data[3];
   // Inicia o vetor de dados
@@ -429,60 +420,60 @@ int backTracker(int** grid){
     data[i].g = grid;
     data[i].type = i;
   }
-  
-  for(i = 0; i < 81; i++){ //Percorre grid em busca da palavra de dicas
-    if(grid[i/9][i%9] < 0){ //Caso o elemento tenha uma palavra de dicas
-      data[0].id = i/9;
-      data[1].id = i%9;
-      data[2].id = (i%9)/3 + 3*((i/9)/3);
-      for(j = 1; j <= 9; j++){  //Procura os elementos da palavra
-	if(containsData(-grid[i/9][i%9],j)){
-	  grid[i/9][i%9] = j; //Atribui o primeiro valor da palavra
-	  //Checa se viola linha, col ou setor
-	  pthread_create(&thr[0], NULL, thread_check, (void*)&(data[0]));
-	  pthread_create(&thr[1], NULL, thread_check, (void*)&(data[1]));
-	  pthread_create(&thr[2], NULL, thread_check, (void*)&(data[2]));
 
-	  int *p_ret;
-	  int total = 0;
+  for(i = 0; i < 9; i++){ //Percorre grid em busca da palavra de dicas
+    for(j = 0; j < 9; j++){
+        if(grid[i][j] == 10){ //Caso o elemento tenha uma palavra de dicas
+          data[0].id = i;
+          data[1].id = j;
+          data[2].id = j/3 + 3*(i/3);
+          for(k = 1; k <= 9; k++){
+              grid[i][j] = k;
+              //Checa se viola linha, col ou setor
+              pthread_create(&thr[0], NULL, thread_check, (void*)&(data[0]));
+              pthread_create(&thr[1], NULL, thread_check, (void*)&(data[1]));
+              pthread_create(&thr[2], NULL, thread_check, (void*)&(data[2]));
 
-	  int k;
-	  for(k = 0; k < 3; k++){
-	    pthread_join(thr[k],(void**)&p_ret);
-	    total += *p_ret;
-	  }
-	  if(total < 3){  //Caso uma das threads acuse erro
-	    continue;
-	  }
-	  else if(backTracker(grid) == 1){ //Se recursão suceder
-	    return 1;
-	  }
-	}
-      }
-      return 0; //Caso "vetor" de dicas tenha esgotado sem sucesso
-    }
-    else if(grid[i/9][i%9] == 0){
-      printf("Encontrado valor invalido");
+              int *p_ret;
+              int total = 0;
+
+              int l;
+              for(l = 0; l < 3; l++){
+                pthread_join(thr[l],(void**)&p_ret);
+                total += *p_ret;
+              }
+              if(total < 3){  //Caso uma das threads acuse erro
+                continue;
+              }
+              else if(backTracker(grid) == 1){ //Se recursão suceder
+                return 1;
+              }
+            }
+          grid[i][j] = 10;
+          return 0; //Caso possibilidades tenham se esgotado sem sucesso
+        }
     }
   }
+
   return 1;
 }
 
 int main (int argc, char* argv[]){
-  printf("Escolha uma opção:\n\nv - Verificar grid pronta\nd - Gerar dicas para sudoku incompleto\nr - Resolver sudoku incompleto\n");
-  char input;
-  scanf("%c",&input);
-  switch(input){
-  case 'v':
-    verificador();
-    break;
-  case 'd':
-    dica();
-    break;
-  case 'r':
-    resolvedor();
-    break;
-  }
-
+    char input = 0;
+    while(input != 'x'){
+      printf("Escolha uma opção:\n\nv - Verificar grid pronta\nd - Gerar dicas para sudoku incompleto\nr - Resolver sudoku incompleto\nx - Sair\n");
+      scanf(" %c",&input);
+      switch(input){
+      case 'v':
+        verificador();
+        break;
+      case 'd':
+        dica();
+        break;
+      case 'r':
+        resolvedor();
+        break;
+      }
+    }
   return 0;
 }
