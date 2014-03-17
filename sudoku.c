@@ -375,6 +375,8 @@ void* thread_check(void*v){
   int type = data.type;
   int check[9];
 
+  printf("Thread %d",id);
+  
   int k = 0, i;
   // Inicializa vetor de verificacao
   for (i = 0; i < 9; i++){
