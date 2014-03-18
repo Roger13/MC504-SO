@@ -1,0 +1,76 @@
+Pedro Ferrazoli Ciambra 137268
+Rogerio de Oliveira Bernardo 140922
+Sudoku Multithread - MC504 - 1S2014
+Unicamp, SP - 2014-03-17 
+
+       		   SUDOKU MULTITHREAD
+
+No projeto, tivemos a ideia de separar as diferentes funcionalidades
+(verificação, dica e resolução) em partes comuns, que pudessem ser
+reutilizadas.
+
+Para isso, utilizamos certas estruturas de dados.
+
+A GRID
+
+A tabela é armazenada numa matriz de ints 9x9, que é alocada dinamicamente para
+que o seu apontador possa ser passado por parâmetro para as threads. Essa
+é uma peculiaridade de C que não funciona se a matriz é alocada localmente.
+
+Os dados são armazenados da seguinte maneira:
+
+1-9: Representam os valores fixos, dados no input.
+10: Representa o valor vazio, a ser preenchido pela funcionalidade
+"dica" ou "resolvedor".
+Negativos: No caso do gerador de dica, armazenam o vetor de bits,
+a ser explicado a seguir.
+
+O VETOR DE BITS
+
+Ao escrever o verificador de matriz, chegamos ao seguinte problema:
+como armazenar os valores faltantes em cada linha, vetor ou coluna
+sem ter que alocar uma nova matriz, de três dimensões, para cada linha,
+coluna e valor armazenado.
+
+A solução encontrada foi armazenar, em cada bit de um int, o valor
+correspondente, de forma que cada bit corresponda à falta ou presença de
+determinado valor na linha/coluna/setor. O acesso e gravação desses valores
+é realizado através de operações binárias, em especial o Bitwise And (&).
+
+O SudokuData
+
+Esta foi a solução encontrada para armazenar as informações obtidas pelas
+threads verificadoras de forma concisa e reutilizável. Se trata de uma
+matriz 3x9 de vetores de bits, na qual a linha 0 representa as informações
+das linhas, a linha 1 corresponde às colunas e a linha 2, aos setores.
+O Struct também encapsula uma variável de erro, que evita iterações
+desnecessárias especificamente na funcão de verificação do sudoku completo.
+
+O Verificador
+
+Estas threads determinam quais os valores faltantes em cada linha, coluna
+ou setor. Esses valores são então utilizados para encontrar erros ou gerar
+dicas.
+
+O HintGenerator
+
+Esta é uma função que transforma os valores indefinidos da grid (os Xs) em
+vetores de bit que contém as possibilidades de preenchimento. Para este fim,
+e para evitar a criação de 81 threads (das quais nem todas seriam necessárias),
+criamos uma lista ligada de pthread_t com comportamento de pilha; para
+cada X encontrado é empilhada uma thread com a coordenada desse X. As threads,
+então, obtém as possibilides operando sobre os valores do SudokuData obtido
+na função de verificação. Então, cada thread é desempilhada e os dados obtidos
+são guardados de volta na pilha.
+
+O Resolvedor
+
+O algoritmo utilizado aqui é muito similar à implementação direta por
+backtracking, já que só faz sentido utilizar diferentes threads se o
+trabalho de cada thread não interferir um no outro. Nesse caso, cada
+recursão do backtracker lança três threads, para verificar a repetição
+de valores na linha, coluna e setor respectivamente. Não foi possível
+reutilizar as estruturas de dados utilizadas no passo anterior, já
+que este depende da repetição, e não falta, de valores. O resultado do
+gerador de dicas poderia ter sido utilizado, mas a diferença de
+performance não seria significativa.
