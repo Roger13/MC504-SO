@@ -48,6 +48,7 @@ void* passageiro(void *v) {
   for (local = 0; local<NUM_PASSAGEIROS; local++){
     if (localNoPonto[local]==-1){
       localNoPonto[local]=thr_id;
+      break;
     }
   }
 

@@ -104,6 +104,7 @@ void busLeave(){
     printBus(i,17);
     printRectangle(i+14,17,i+14,19," ");
     catchABreath();
+    printRectangle(1,17,1,19,"║");
     moveTo(0,0);
     usleep(50000);
   }
@@ -115,6 +116,7 @@ void busArrive(){
     if (i>46){
       printBus(i,17);
       printRectangle(61,17,61+12,19," ");
+      printRectangle(60,17,60,19,"║");
     }
     else {
       printRectangle(i+14,17,i+14,19," ");
@@ -174,7 +176,7 @@ void moveToBus(int spot, char* icon){
     printIcon(i,15," ");
     printIcon(i-1,15,icon);
     catchABreath();
-    usleep(FRAME_DUR);
+    usleep(FRAME_DUR/10);
   }
   printIcon(4,15," ");
 }
