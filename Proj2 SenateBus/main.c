@@ -1,5 +1,5 @@
 /*  The Senate Bus Problem
- *  (Rogério de O. Bernardo - 140922 / Pedro Ciambra - RA)
+ *  (Rogério de O. Bernardo - 140922 / Pedro Ciambra - 137268)
  *  -Passageiros se aglomeram no ponto
  *  -Quando onibus chega, passageiros do ponto começam a embarcar
  *  -Caso o onibus seguinte chegue antes do término do embarque, os passageiros podem obtar por qualquer onibus
@@ -9,93 +9,138 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include "render.h"
 
-#define P 60 // P deve ser maior ou igual a O, devido ao laço de criação das threads.
-#define O 2
+#define MAX_PASSAGEIROS 50
+#define NUM_PASSAGEIROS 60 // Deve ser maior ou igual a NUM_ONIBUS, devido ao laço de criação das threads.
+#define NUM_ONIBUS 2
 
+volatile int numFila = 0; // Número de pessoas na fila para entrar no ponto
 volatile int numPonto = 0; // Número de pessoas no ponto
 volatile int numOnibus = 0; // Número de onibus no ponto
-volatile int numEmbarque = 0; // Número de pessoas para embarcar no onibus
 volatile int numPassageiros = 0; // Número de pessoas no onibus
+volatile int localNoPonto[NUM_PASSAGEIROS]; // Apenas para animacao
 
 pthread_cond_t condBusChegou;
 pthread_cond_t condFimEmbarque;
-pthread_mutex_t mutex;
-
+pthread_mutex_t mutex_onibus, mutex_catraca, mutex_fila;
 
 void* passageiro(void *v) {
-    int thr_id = *(int *)v;
+  char icon[20];
+  int local;
+  int thr_id = *(int *)v;
+  //  printf("Passageiro %d chegou ao ponto de onibus(numPonto: %d / numPassageiros: %d).\n",thr_id, numPonto, numPassageiros);
 
-    pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&mutex_fila);
+  numFila++;
+  pthread_mutex_unlock(&mutex_fila);
 
-    ++numPonto; // Incrementa número de passageiros no ponto
-    printf("Passageiro %d adentrou o ponto de onibus(numPonto: %d / numPassageiros: %d).\n",thr_id, numPonto, numPassageiros);
+  pthread_mutex_lock(&mutex_catraca);
 
-    do{
-        pthread_cond_wait(&condBusChegou, &mutex); // Espera onibus
-    }while(numOnibus == 0); // Enquanto não houverem onibus
+  pthread_mutex_lock(&mutex_fila);
+  numFila--;
+  pthread_mutex_unlock(&mutex_fila);
 
-    //"BoardBus"
-    ++numPassageiros; // Incrementa número de passageiros no onibus
-    --numPonto; // Decrementa número de passageiros no ponto
-    --numEmbarque; // Decrementa número de passageiros que devem embarcar
-    printf("Passageiro %d embarcou no onibus(numPonto: %d / numPassageiros: %d).\n",thr_id, numPonto, numPassageiros);
-
-    if(numEmbarque == 0 || numPassageiros == 50){ // Caso onibus encheu ou não tem mais passageiros para embarcar
-        pthread_cond_broadcast(&condFimEmbarque); // Avisa que onibus pode partir
-        numOnibus = 0;
+  generateIcon(icon);
+  moveTo(2,2);
+  printf("Passageiro %s %d entrou no ponto de onibus( %d / %d ).\n",icon,thr_id, numPonto, numPassageiros);
+  
+  for (local = 0; local<NUM_PASSAGEIROS; local++){
+    if (localNoPonto[local]==-1){
+      localNoPonto[local]=thr_id;
     }
-    pthread_mutex_unlock(&mutex);
+  }
+
+  moveToSpot(local,icon);
+
+  ++numPonto; // Incrementa número de passageiros no ponto
+
+  pthread_mutex_unlock(&mutex_catraca);
+
+  pthread_mutex_lock(&mutex_onibus);
+
+  do{
+    pthread_cond_wait(&condBusChegou, &mutex_onibus); // Espera onibus
+  }while(numOnibus == 0); // Enquanto não houverem onibus
+
+  moveToBus(local,icon);
+  ++numPassageiros; // Incrementa número de passageiros no onibus
+  --numPonto; // Decrementa número de passageiros no ponto
+
+  logBegin();
+  printf("%s %d embarcou no onibus( %d / %d )\n",icon, thr_id, numPonto, numPassageiros);
+  logEnd();
+
+  if(numPonto <= 0 || numPassageiros >= MAX_PASSAGEIROS){ // Caso onibus encheu ou não tem mais passageiros para embarcar
+    pthread_cond_broadcast(&condFimEmbarque); // Avisa que onibus pode partir
+    numOnibus--;
+  }
+  pthread_mutex_unlock(&mutex_onibus);
 }
 
 void* onibus(void *v) {
-    pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&mutex_catraca);
+  pthread_mutex_lock(&mutex_onibus);
+  ++numOnibus;
+  numPassageiros = 0;
+  logBegin();
+  printf("Onibus chegou ao ponto ( %d / %d )\n", numPonto,numPassageiros);
+  logEnd();
 
-    ++numOnibus;
-    printf("Onibus chegou no ponto(numPonto: %d / numPassageiros: %d)!\n", numPonto,numPassageiros);
+  busArrive();
 
-    if(numPonto == 0){ // Caso onibus esteja vazio
-        printf("Ponto vaziu, onibus partindo...\n");
-        pthread_mutex_unlock(&mutex);
-        return;
-    }
-
+  if(numPonto == 0){ // Caso ponto esteja vazio
+    logBegin();
+    printf("Ponto vazio, onibus partindo...");
+    logEnd();
+  }
+  else{
     pthread_cond_broadcast(&condBusChegou); // Avisa aos passageiros do ponto que podem embarcar
-    numEmbarque = numPonto;
-    pthread_cond_wait(&condFimEmbarque, &mutex); // Espera o fim do embarque
+    pthread_cond_wait(&condFimEmbarque, &mutex_onibus); // Espera o fim do embarque
 
     //"Depart"
-    printf("Fim do embarque, onibus partindo(numPonto: %d / numPassageiros: %d)!\n", numPonto, numPassageiros);
-    numPassageiros = 0; // Zera número de passageiros para o próximo onibus
+    logBegin();
+    printf("Onibus partindo ( %d / %d )", numPonto, numPassageiros);
+    logEnd();
 
-    pthread_mutex_unlock(&mutex);
+    numPassageiros = 0; // Zera número de passageiros para o próximo onibus
+  }
+  busLeave();
+  pthread_mutex_unlock(&mutex_onibus);
+  pthread_mutex_unlock(&mutex_catraca);
 }
 
 int main()
 {
-    pthread_t passageiros[P]; // Vetor de threads passageiro
-    pthread_t busoes[O]; // Vetor de onibus
+  pthread_t passageiros[NUM_PASSAGEIROS]; // Vetor de threads passageiro
+  pthread_t busoes[NUM_ONIBUS]; // Vetor de onibus
 
-    int i, id[P];
+  int i, id[NUM_PASSAGEIROS];
 
-    printf("SenateBus!\n");
+  init();
+  logBegin();
+  printf("SenateBus!\n");
 
-    //Cria passageiros e onibus
-    for (i = 0; i < P; i++) {
-        id[i] = i;
-        pthread_create(&passageiros[i], NULL, passageiro, &id[i]);
+  for (i = 0; i < NUM_PASSAGEIROS; i++)
+    localNoPonto[i]=-1;
 
-        if(i < O - 1){
-            pthread_create(&busoes[i], NULL, onibus, &id[P-1]);
-        }
-    }
+  //Cria passageiros e onibus
+  for (i = 0; i < NUM_PASSAGEIROS; i++) {
+    id[i] = i;
+    pthread_create(&passageiros[i], NULL, passageiro, &id[i]);
+  }
+  for (i = 0; i < NUM_ONIBUS; i++) {
+    pthread_create(&busoes[i], NULL, onibus, NULL);
+  }
 
-    pthread_create(&busoes[O-1], NULL, onibus, &id[0]);
+  //Espera todos os onibus
+  for (i = 0; i < NUM_ONIBUS; i++) {
+    pthread_join(busoes[i], NULL);
+  }
+  for (i = 0; i < NUM_PASSAGEIROS; i++) {
+    pthread_join(passageiros[i], NULL);
+  }
 
-    //Espera todos os onibus
-    for (i = 0; i < O; i++) {
-        pthread_join(busoes[i], NULL);
-    }
-
-    return 0;
+  end();
+  return 0;
 }
