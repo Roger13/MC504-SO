@@ -1,3 +1,7 @@
+// render.c - Biblioteca para animação do "The Senate Bus Problem"
+// Rogério de O. Bernardo  - 140922
+// Pedro Ferrazoli Ciambra - 137268
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,7 +73,7 @@ void printBus(int x, int y){
     printf("%s",busMid+(1-x)*3*sizeof(char)); moveTo(1,y+2);
     printf("%s",busBot+(1-x)*3*sizeof(char));
   }
-  printf("\033[01;37m");
+  printf(KNRM);
 }
 
 void printRectangle(int x1, int y1, int x2, int y2, char* s){
@@ -121,6 +125,7 @@ void busArrive(){
     else {
       printRectangle(i+14,17,i+14,19," ");
       printBus(i,17);
+      printRectangle(60,17,60,19,"║");
     }
     catchABreath();
     usleep(50000);
@@ -200,7 +205,7 @@ void generateIcon(char* tar){
     strcat(tar,KCYN);
     break;
   }
-  switch(rand()%5){
+  switch(rand()%6){
   case 0:
     strcat(tar,"♚");
     break;
@@ -223,11 +228,34 @@ void generateIcon(char* tar){
   strcat(tar,KNRM);
 }
 
+void printFila(int n){
+  moveTo(11,6);
+  printf("          ");
+  moveTo(11,6); 
+  printf("Fila: %d",n);
+}
+
+void printPonto(int n){
+  moveTo(22,6);
+  printf("          ");
+  moveTo(22,6); 
+  printf("Ponto: %d",n);
+}
+
+void printOnibus(int n){
+  moveTo(33,6);
+  printf("           ");
+  moveTo(33,6); 
+  printf("Onibus: %d",n);
+}
+
 void init(){
   clear();
   printFrame();
   printRectangle(2,5,5,7,"█");
   printRectangle(9,5,59,7,"█");
+  moveTo(1,21);
+  printf("Ctrl-C para sair a qualquer momento.\nEsta animação é melhor vizualizada com uma fonte grande.");
   moveTo(6,7);
   printf("⊂|⊃");
   printRectangle(2,16,59,16,"━");
@@ -240,7 +268,7 @@ void init(){
 void end(){
   char c;
   logBegin();
-  printf("Aperte qualquer tecla para sair");
+  printf("Aperte qualquer tecla para sair.");
   scanf ("%c",&c);
   clear();
   moveTo(1,1);

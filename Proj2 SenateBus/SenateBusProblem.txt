@@ -11,7 +11,8 @@ Comportamento do código:
 
 -Threads passageiros entram no ponto de onibus e esperam pela condição "onibusChegou".
 -Quando uma thread onibus chega, ele avisa todas as threads passageiros que estão no ponto para começarem a embarcar.
--Threads passageiros que chegam nesse meio tempo devem esperar o próximo onibus, caso este chegue antes do onibus atual partir, os passageiros podem escolhar em qual onibus embarcar.
--Quando o onibus está cheio ou já pegou "seus" passageiros, ele vai embora.
--O código termina de executar quando o número total de onibus partirem
--O código não garante ausência de starvation!
+-Threads passageiros que chegam nesse meio tempo devem esperar o ônibus sair para entrar no ponto e esperar o próximo ônibus.
+-Quando o onibus está cheio ou já pegou todos os passageiros do ponto, ele vai embora.
+-O código termina de executar quando o número total de onibus partirem.
+-A existência de starvation depende somente do escalonador do mutex; se ele seguir a política first in/first out,
+ ou algo próximo, não haverá starvation.

@@ -25,4 +25,7 @@ void printIcon(int x, int y, char* s);
 void moveToSpot(int spot, char* icon);
 void moveToBus(int spot, char* icon);
 void generateIcon(char* tar);
+void printFila(int n);
+void printPonto(int n);
+void printOnibus(int n);
 void end();
